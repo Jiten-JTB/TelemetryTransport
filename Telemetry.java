@@ -8,7 +8,7 @@ import java.io.*;
 import java.net.*;
 
 
-class TelemetryOOPS {
+class Telemetry {
     // Array We Want To Send
     public static int selectedModes[] = new int[16];
 
