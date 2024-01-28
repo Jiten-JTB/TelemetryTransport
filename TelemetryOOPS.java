@@ -211,7 +211,7 @@ class TelemetryOOPS {
                     // send(selectedModes);
                     Runtime runTime = Runtime.getRuntime();
                     try {
-                        runTime.exec("java --add-exports=java.base/java.lang=ALL-UNNAMED --add-exports=java.desktop/sun.awt=ALL-UNNAMED --add-exports=java.desktop/sun.java2d=ALL-UNNAMED -jar TelemetryViewer_v0.6.jar");
+                        runTime.exec("java --add-exports=java.base/java.lang=ALL-UNNAMED --add-exports=java.desktop/sun.awt=ALL-UNNAMED --add-exports=java.desktop/sun.java2d=ALL-UNNAMED -jar TelemetryViewer.jar");
                     }
                     catch (IOException e1) {
                         System.out.println(e1);
