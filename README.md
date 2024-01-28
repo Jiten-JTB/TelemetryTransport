@@ -22,7 +22,7 @@ This collaborative project, undertaken in partnership with faculty members of Am
 1. **GUI Development (Jiten):**
    - Design and implement a user-friendly Java GUI for configuration management and data transmission control.
 
-2. **Socket Programming (Your Name):**
+2. **Socket Programming (Naman Malik):**
    - Establish TCP socket communication.
    - Manage connections with the embedded system.
 
