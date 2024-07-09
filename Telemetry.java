@@ -1,31 +1,31 @@
 import java.awt.*;
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
+
+import org.w3c.dom.Text;
+
 import java.awt.event.*;
 import java.util.*;
-// import java.util.Arrays; // Do We Still Need This?
+import java.util.Arrays; // Do We Still Need This?
 import java.io.*;
 import java.net.*;
 
 
-class Telemetry {
+class TelemetryOOPS {
     // Array We Want To Send
     public static int selectedModes[] = new int[16];
 
     // Constants
     public static int channel = 16;
     public static int mode = 4;
-    public static int serverPort = 12345;
-    public static ServerSocket serverSocket;
+    public static int ServerPort = 8080;
+    public static String clientAddress;
 
     // Function To Edit The Selected Mode Array
     public static void setMode(int pos, int mode) { 
         selectedModes[pos] = mode;
     }
 
-
-
-    
     // Class To Create Modes Label Panel ----> Mode 1 Mode 2 Mode 3 Mode 4
     static class modesLabelPanel extends JPanel {
         modesLabelPanel() {
@@ -37,8 +37,12 @@ class Telemetry {
         }
     }
     
-
-
+    // IP Octal Class
+    class IPoctal extends JTextField {
+        IPoctal() {
+            
+        }
+    }
     
     // Class To Create Complete Set-Up For Set Of JRadioButton 
     static class setOfJRadioButtons extends JPanel {
@@ -105,23 +109,8 @@ class Telemetry {
         return true;
     }
 
-
-
-
     // Main -----------------------------------------------------------
     public static void main(String args[]) throws Exception {
-
-        //Starting Server
-        try{
-            serverSocket = new ServerSocket(serverPort);
-            System.out.println("Server listening on port " + serverPort);
-            InetAddress serverAddress = InetAddress.getLocalHost();
-            System.out.println("Server IP address: " + serverAddress.getHostAddress());
-        } catch(IOException e) {
-            e.printStackTrace();
-            // Create Server Error Label ------------------------------------------
-        }
-
         // Creating Frame And Give Some Basic Functionalities
         JFrame frame = new JFrame("Telemetry Mode Selector");
         frame.setSize(540, 660);
@@ -147,12 +136,37 @@ class Telemetry {
         frame.add(pBottom, BorderLayout.SOUTH);
 
 
-        // System IP Address Label
-        InetAddress localhost = InetAddress.getLocalHost();
-        JLabel ip = new JLabel("System IP Address: " + (localhost.getHostAddress()).trim());
-        pTop.add(ip);
-        JButton refreshButton = new JButton("Refresh");
-        pTop.add(refreshButton);
+        // Set Input IP Address
+        JTextField octal1 = new JTextField(3);
+        pTop.add(octal1);
+        JLabel d1 = new JLabel(".");
+        pTop.add(d1);
+        JTextField octal2 = new JTextField(3);
+        pTop.add(octal2);
+        JLabel d2 = new JLabel(".");
+        pTop.add(d2);
+        JTextField octal3 = new JTextField(3);
+        pTop.add(octal3);
+        JLabel d3 = new JLabel(".");
+        pTop.add(d3);
+        JTextField octal4 = new JTextField(3);
+        pTop.add(octal4);
+
+        // Set IP Address Button
+        JButton setIP = new JButton("Set");
+        pTop.add(setIP);
+
+        setIP.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                System.out.println("Clicked");
+                String s = e.getActionCommand();
+                if (s.equals("Set")) {
+                    clientAddress = octal1.getText() + "." + octal2.getText() + "." + octal3.getText() + "." + octal4.getText();
+                    System.out.println(clientAddress);
+                }
+            }
+        });
+
 
         
         // Inside Main Panel
@@ -209,11 +223,10 @@ class Telemetry {
                     System.out.println(Arrays.toString(selectedModes));
 
                     // send(selectedModes);
-                    Runtime runTime = Runtime.getRuntime();
                     try {
-                        runTime.exec("java --add-exports=java.base/java.lang=ALL-UNNAMED --add-exports=java.desktop/sun.awt=ALL-UNNAMED --add-exports=java.desktop/sun.java2d=ALL-UNNAMED -jar TelemetryViewer.jar");
-                    }
-                    catch (IOException e1) {
+                        ProcessBuilder processBuilder = new ProcessBuilder("java", "--add-exports=java.base/java.lang=ALL-UNNAMED", "--add-exports=java.desktop/sun.awt=ALL-UNNAMED", "--add-exports=java.desktop/sun.java2d=ALL-UNNAMED", "-jar", "TelemetryViewer.jar");
+                        processBuilder.start();
+                    } catch (IOException e1) {
                         System.out.println(e1);
                     }
                     System.exit(0);
@@ -227,80 +240,33 @@ class Telemetry {
         frame.setVisible(true);
     }
 
-    // IMPORTANT -----------------------------------------
-    // Server
+    // Client
     public static void send(int [] dataArray) {
+        String serverHost = clientAddress; // Server hostname or IP address
+        int serverPort = 12345; // Port to connect to
+
+        // Data to send (16-element array)
+        // int[] dataArray = {1, 2, 3, 4, 5, 6, 7, 8, 9, 1, 2, 3, 4, 5, 6, 7 };
 
         try {
-            Socket clientSocket = serverSocket.accept();
-            System.out.println("Client connected from: " + clientSocket.getInetAddress());
-
-            // Get the output stream to send data to the client
-            OutputStream outputStream = clientSocket.getOutputStream();
-
-            // Create a byte array to store the data
-            byte[] byteArray = new byte[dataArray.length * 4]; // Assuming 4 bytes per int
-
-            // Convert the array to bytes
+            // Connect to the server
+            Socket socket = new Socket(serverHost, serverPort);
+            
+            // Send data to the server
+            PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
             for (int i = 0; i < dataArray.length; i++) {
-                int offset = i * 4;
-                byteArray[offset] = (byte) (dataArray[i] >> 24);
-                byteArray[offset + 1] = (byte) (dataArray[i] >> 16);
-                byteArray[offset + 2] = (byte) (dataArray[i] >> 8);
-                byteArray[offset + 3] = (byte) (dataArray[i]);
+                String dataToSend = String.valueOf(dataArray[i]);
+                out.println(dataToSend);
+                System.out.println("Sent: " + dataToSend);
+                Thread.sleep(3000); // Small delay to ensure proper transmission
             }
-
-            // Send the byte array to the client
-            outputStream.write(byteArray);
-            System.out.println("Array Send From Client: " + Arrays.toString(dataArray));
-
-            // Close the output stream, client socket, and server socket
-            outputStream.close();
-            clientSocket.close();
-            serverSocket.close();
-            System.exit(0);
-        } catch (IOException e) {
+            
+            // Close the connection
+            out.close();
+            socket.close();
+            System.out.println("Data sent to ESP8266.");
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
-    // Client
-    // public static void send(int [] dataArray) {
-    //     String serverHost = "127.0.0.1"; // Server hostname or IP address
-    //     int serverPort = 12345; // Port to connect to
-
-    //     try {
-    //         // Create a socket to connect to the server
-    //         Socket socket = new Socket(serverHost, serverPort);
-    //         System.out.println("Connected to server: " + serverHost);
-
-    //         // Get the output stream to send data to the server
-    //         OutputStream outputStream = socket.getOutputStream();
-
-    //         // Create an array of 16 integers to send to the server
-    //         // int[] dataArray = {16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1};
-
-    //         // Create a byte array to store the data
-    //         byte[] byteArray = new byte[dataArray.length * 4]; // Assuming 4 bytes per int
-
-    //         // Convert the array to bytes
-    //         for (int i = 0; i < dataArray.length; i++) {
-    //             int offset = i * 4;
-    //             byteArray[offset] = (byte) (dataArray[i] >> 24);
-    //             byteArray[offset + 1] = (byte) (dataArray[i] >> 16);
-    //             byteArray[offset + 2] = (byte) (dataArray[i] >> 8);
-    //             byteArray[offset + 3] = (byte) (dataArray[i]);
-    //         }
-
-    //         // Send the byte array to the server
-    //         outputStream.write(byteArray);
-    //         System.out.println("Array sent to server: " + Arrays.toString(dataArray));
-
-    //         // Close the output stream and socket
-    //         outputStream.close();
-    //         socket.close();
-
-    //     } catch (IOException e) {
-    //         e.printStackTrace();
-    //     }
-    // }
 }
